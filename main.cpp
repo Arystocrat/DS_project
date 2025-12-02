@@ -2,6 +2,7 @@
 #include <string>
 #include <thread> // Для имитации задержки воспроизведения (sleep)
 #include <chrono>
+#include <windows.h>
 
 // Подключаем ваши хедеры
 // ВАЖНО: Предполагается, что конфликт имен Node уже исправлен внутри этих файлов!
@@ -23,6 +24,7 @@ void fakePlay(string title, string artist = "Unknown", int duration = 2) {
 }
 
 int main() {
+    SetConsoleOutputCP(65001);
     // 1. Создаем структуры данных
     Arraymethod library;       // Хранилище всех песен (Массив)
     Queue standardQueue;       // Обычная очередь (Очередь)
