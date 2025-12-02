@@ -1,42 +1,39 @@
 #include <iostream>
 #include <string>
-#include <thread>
+#include <thread> // For sleep
 #include <chrono>
-#include <windows.h> // Для русского языка
 
-// Подключаем ваши хедеры
+// Include your headers
 #include "arraym.h"
 #include "QUEUE.h"
 #include "Stack_ds.h"
 
 using namespace std;
 
-// Функция имитации проигрывания
+// Helper function to simulate playing a track
 void playTrackDisplay(string title, string artist = "", int duration = 2) {
     cout << "\n------------------------------------------------" << endl;
-    cout << " >> [PLAYING NOW] ♫ " << title;
+    cout << " >> [NOW PLAYING] " << title;
     if (!artist.empty()) cout << " - " << artist;
-    cout << " ♫" << endl;
+    cout << endl;
     cout << "------------------------------------------------" << endl;
 
-    // Имитация прогресс-бара
-    cout << "Loading: [";
+    // Progress bar simulation
+    cout << "Playing: [";
     for(int i=0; i<10; i++) {
-        cout << "#";
+        cout << "/";
         this_thread::sleep_for(chrono::milliseconds(duration * 100));
     }
     cout << "] Done.\n" << endl;
 }
 
 int main() {
-    SetConsoleOutputCP(65001); // Русский язык в консоли
+    // 1. Initialize Data Structures
+    Arraymethod library;         // Storage for all songs
+    Queue standardQueue;         // Standard playlist
+    PlayNextStack priorityStack; // "Play Next" feature
 
-    // Инициализация структур
-    Arraymethod library;       // Библиотека
-    Queue standardQueue;       // Очередь
-    PlayNextStack priorityStack; // Стек (срочное)
-
-    // 1. Предварительно заполним библиотеку (чтобы было из чего выбирать)
+    // 2. Pre-fill the Library
     library.append("Linkin Park - Numb");
     library.append("Daft Punk - Get Lucky");
     library.append("Queen - Bohemian Rhapsody");
@@ -49,18 +46,19 @@ int main() {
 
     while (isRunning) {
         cout << "=========================================" << endl;
-        cout << "         МУЗЫКАЛЬНЫЙ ПЛЕЕР v2.0          " << endl;
+        cout << "         CONSOLE MUSIC PLAYER v2.0       " << endl;
         cout << "=========================================" << endl;
-        cout << "1. Показать библиотеку (все треки)" << endl;
-        cout << "2. Добавить трек в Очередь (по индексу)" << endl;
-        cout << "3. 'Играть следующим' (Play Next - Стек)" << endl;
-        cout << "4. Показать, что будет играть (Status)" << endl;
-        cout << "5. >> ИГРАТЬ ТРЕК (Next Track) >>" << endl;
-        cout << "0. Выход" << endl;
+        cout << "1. Show Library (All Tracks)" << endl;
+        cout << "2. Add to Queue (by Index)" << endl;
+        cout << "3. Play Next (Priority Stack)" << endl;
+        cout << "4. View Player Status (Queue & Stack)" << endl;
+        cout << "5. >> PLAY NEXT TRACK >>" << endl;
+        cout << "0. Exit" << endl;
         cout << "=========================================" << endl;
-        cout << "Ваш выбор: ";
+        cout << "Enter choice: ";
 
-        if (!(cin >> choice)) { // Защита от ввода букв
+        // Input validation
+        if (!(cin >> choice)) {
             cin.clear();
             cin.ignore(10000, '\n');
             choice = -1;
@@ -68,87 +66,84 @@ int main() {
 
         switch (choice) {
         case 1: {
-            cout << "\n--- БИБЛИОТЕКА ---" << endl;
+            cout << "\n--- MUSIC LIBRARY ---" << endl;
             library.display();
             break;
         }
 
         case 2: {
             int idx;
-            cout << "Введите индекс трека из библиотеки: ";
+            cout << "Enter track index from Library: ";
             cin >> idx;
-            // Простейшая проверка (так как в классе нет getLength, рискуем, но надеемся на пользователя)
-            // Лучше добавить метод getLength() в Arraymethod, но пока просто пробуем:
-            string track = library.getbyindex(idx);
-            // Если индекс плохой, программа может упасть (нужна доработка Arraymethod),
-            // но если ввели верно:
-            standardQueue.enqueue(track);
-            cout << "[OK] Добавлено в хвост очереди: " << track << endl;
+            if (idx >= 0) {
+                string track = library.getbyindex(idx);
+                standardQueue.enqueue(track);
+                cout << "[Success] Added to Queue: " << track << endl;
+            } else {
+                cout << "[Error] Invalid index." << endl;
+            }
             break;
         }
 
         case 3: {
-            // Стек требует структуру Song, вводим данные вручную
+            // Stack requires a Song struct
             string t, a;
             int d;
-            cout << "Введите название песни: ";
-            cin.ignore(); // Очистка буфера после cin >> choice
+            cout << "Enter Song Title: ";
+            cin.ignore();
             getline(cin, t);
-            cout << "Введите исполнителя: ";
+            cout << "Enter Artist: ";
             getline(cin, a);
-            cout << "Длительность (сек): ";
+            cout << "Duration (sec): ";
             cin >> d;
 
             Song s = {t, a, d};
-            priorityStack.push(s);
+            priorityStack.push(s); // Pushed to top
             break;
         }
 
         case 4: {
-            // Показываем состояние
+            // Display Stack (Priority)
             priorityStack.displayStack();
 
-            cout << "\n--- Обычная очередь ---" << endl;
-            if (standardQueue.isempty()) {
-                cout << "(Пусто)" << endl;
-            } else {
-                cout << "Следующий в очереди: " << standardQueue.front() << endl;
-                cout << "(...остальные скрыты, т.к. в Queue нет метода displayAll)" << endl;
-            }
+            // Display Queue (Standard)
+            cout << "\n--- Standard Queue ---" << endl;
+            standardQueue.displayQueue(); // Using the NEW method
+            cout << "----------------------" << endl;
             break;
         }
 
         case 5: {
-            // ЛОГИКА ВОСПРОИЗВЕДЕНИЯ
-            // 1. Приоритет у Стека
+            // PLAYBACK LOGIC
+            // 1. Check Stack first
             if (!priorityStack.isEmpty()) {
                 Song s = priorityStack.pop();
-                cout << "\n[INFO] Играем из списка 'Play Next' (Приоритет)" << endl;
+                cout << "\n[INFO] Playing from 'Play Next' List (Priority)" << endl;
                 playTrackDisplay(s.title, s.artist, s.duration);
             }
-            // 2. Если стек пуст, берем Очередь
+            // 2. Check Queue second
             else if (!standardQueue.isempty()) {
                 string trackName = standardQueue.dequeue();
-                cout << "\n[INFO] Играем из обычной очереди" << endl;
+                cout << "\n[INFO] Playing from Standard Queue" << endl;
                 playTrackDisplay(trackName);
             }
-            // 3. Если всё пусто
+            // 3. Nothing to play
             else {
-                cout << "\n[!] Очередь пуста. Добавьте музыку!" << endl;
+                cout << "\n[!] Silence... The queue is empty. Add more songs!" << endl;
             }
             break;
         }
 
         case 0:
-            cout << "Выход..." << endl;
+            cout << "Exiting Player..." << endl;
             isRunning = false;
             break;
 
         default:
-            cout << "Неверная команда." << endl;
+            cout << "Invalid command. Please try again." << endl;
         }
 
-        cout << "\n"; // Отступ
+        cout << "\n";
     }
 
     return 0;
