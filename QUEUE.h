@@ -1,6 +1,11 @@
+#ifndef QUEUE_H
+#define QUEUE_H
+
 #include <iostream>
+#include <string>
 using namespace std;
 
+// Renamed to QueueNode to avoid conflict with Stack's Node
 class QueueNode {
 public:
     string track;
@@ -11,8 +16,8 @@ public:
 
 class Queue {
 private:
-    QueueNode* first;  // указатель на первый элемент
-    QueueNode* last;   // указатель на последний элемент
+    QueueNode* first;
+    QueueNode* last;
     int size;
     const int MAX = 50;
 
@@ -39,7 +44,7 @@ public:
 
     void enqueue(const string& track) {
         if (isfull()) {
-            cout << "queue is full" << endl;
+            cout << "[Queue] Full!" << endl;
             return;
         }
 
@@ -59,12 +64,12 @@ public:
 
     string dequeue() {
         if (isempty()) {
-            cout << "queue is empty" << endl;
+            cout << "[Queue] Empty!" << endl;
             return "";
         }
 
         QueueNode* temp = first;
-        string next = temp->track;
+        string nextTrack = temp->track;
 
         first = first->next;
 
@@ -74,15 +79,31 @@ public:
 
         delete temp;
         size--;
-        return next;
+        return nextTrack;
     }
 
     string front() {
         if (isempty()) {
-            cout << "queue is empty" << endl;
-            return "";
+            return "Empty";
         }
         return first->track;
     }
+
+    // --- NEW METHOD ---
+    void displayQueue() {
+        if (isempty()) {
+            cout << "   (Queue is empty)" << endl;
+            return;
+        }
+
+        QueueNode* current = first;
+        int count = 1;
+        while (current != nullptr) {
+            cout << "   " << count << ". " << current->track << endl;
+            current = current->next;
+            count++;
+        }
+    }
 };
 
+#endif
