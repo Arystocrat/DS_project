@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 
-// Renamed to QueueNode to avoid conflict with Stack's Node
+
 class QueueNode {
 public:
     string track;
