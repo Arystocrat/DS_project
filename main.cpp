@@ -3,6 +3,10 @@
 #include <thread> // For sleep
 #include <chrono>
 
+
+// g++ main.cpp -o main.exe & main.exe
+
+
 // Include your headers
 #include "arraym.h"
 #include "QUEUE.h"
@@ -30,8 +34,8 @@ void playTrackDisplay(string title, string artist = "", int duration = 2) {
 int main() {
     // 1. Initialize Data Structures
     Arraymethod library;
-    Queue standardQueue;
-    PlayNextStack priorityStack;
+    Queue* standardQueue = new Queue();
+    PlayNextStack* priorityStack = new PlayNextStack();
 
     // 2. Pre-fill the Library
     library.append("Linkin Park - Numb");
@@ -52,8 +56,10 @@ int main() {
         cout << "2. Add to Queue (Standard Playlist)" << endl;
         cout << "3. Play Next (Priority Stack) [From Lib]" << endl; // <--- CHANGED
         cout << "4. View Player Status (Queue & Stack)" << endl;
-        cout << "5. >> PLAY NEXT TRACK >>" << endl;
-        cout << "6. [+] Add New Track to Library" << endl;
+        cout << "5. [+] Add New Track to Library" << endl;
+        cout << "6. [-] Delete Track from Queue" << endl;
+        cout << "7. [-] Delete Track from Stack" << endl;
+        cout << "8. >> PLAY NEXT TRACK >>" << endl;        
         cout << "0. Exit" << endl;
         cout << "=========================================" << endl;
         cout << "Enter choice: ";
@@ -79,7 +85,7 @@ int main() {
 
             if (idx >= 0) {
                 string track = library.getbyindex(idx);
-                standardQueue.enqueue(track);
+                standardQueue->enqueue(track);
                 cout << "[Success] Added to Queue: " << track << endl;
             } else {
                 cout << "[Error] Invalid index." << endl;
@@ -103,7 +109,7 @@ int main() {
                 s.artist = "";        // Leave artist empty (it's already in title)
                 s.duration = 3;       // Default duration for quick adding
 
-                priorityStack.push(s);
+                priorityStack->push(s);
                 cout << "[Success] Jumped the queue! Up Next: " << trackName << endl;
             } else {
                 cout << "[Error] Invalid index." << endl;
@@ -112,32 +118,15 @@ int main() {
         }
 
         case 4: {
-            priorityStack.displayStack();
+            priorityStack->displayStack();
             cout << "\n--- Standard Queue ---" << endl;
-            standardQueue.displayQueue();
+            standardQueue->displayQueue();
             cout << "----------------------" << endl;
             break;
         }
 
-        case 5: {
-            // Playback logic
-            if (!priorityStack.isEmpty()) {
-                Song s = priorityStack.pop();
-                cout << "\n[INFO] Playing from 'Play Next' List (Priority)" << endl;
-                playTrackDisplay(s.title, s.artist, s.duration);
-            }
-            else if (!standardQueue.isempty()) {
-                string trackName = standardQueue.dequeue();
-                cout << "\n[INFO] Playing from Standard Queue" << endl;
-                playTrackDisplay(trackName);
-            }
-            else {
-                cout << "\n[!] Silence... The queue is empty." << endl;
-            }
-            break;
-        }
 
-        case 6: {
+        case 5: {
             string newTrackName;
             cout << "Enter track name: ";
             cin.ignore();
@@ -150,6 +139,89 @@ int main() {
             break;
         }
 
+
+        case 6: {
+
+            if (standardQueue->isempty()){
+                cout << "Nothing to delete!" << endl;
+                break;
+            }
+            else{
+                int index = 0;
+                cout << "Enter index of track to delete from Queue: ";
+                cin >> index;
+                cin.ignore();
+                Queue* temp = new Queue();
+                for (int i = 1 ; i != index ; i++){
+                    string track = standardQueue->dequeue();
+                    temp->enqueue(track);
+                }
+                string deletedTrack = standardQueue->dequeue();
+                cout << "[Deleted] " << deletedTrack << " from Queue." << endl;
+                while (!standardQueue->isempty()){
+                    string track = standardQueue->dequeue();
+                    temp->enqueue(track);
+                }
+                delete standardQueue;
+                standardQueue = temp;
+
+            }
+
+
+            break;
+        }        
+        case 7: {
+            if (priorityStack->isEmpty()){
+                cout << "Nothing to delete!" << endl;
+                break;
+            }
+            else{
+                int index = 0;
+                cout << "Enter index of track to delete from 'Play Next' Stack: ";
+                cin >> index;
+                cin.ignore();
+                PlayNextStack* tempStack = new PlayNextStack();
+                for (int i = 1 ; i != index ; i++){
+                    Song track = priorityStack->pop();
+                    tempStack->push(track);
+                }
+                Song deletedSong = priorityStack->pop();
+                cout << "[Deleted] " << deletedSong.title << " from 'Play Next' Stack." << endl;
+                while (!priorityStack->isEmpty()){
+                    Song track = priorityStack->pop();
+                    tempStack->push(track);
+                }
+                // Restore original stack without the deleted song
+                while (!tempStack->isEmpty()){
+                    Song track = tempStack->pop();
+                    priorityStack->push(track);
+                }
+                delete tempStack;
+
+            }
+            break;
+        }
+    
+        case 8: {
+            // Playback logic
+            if (!priorityStack->isEmpty()) {
+                Song s = priorityStack->pop();
+                cout << "\n[INFO] Playing from 'Play Next' List (Priority)" << endl;
+                playTrackDisplay(s.title, s.artist, s.duration);
+            }
+            else if (!standardQueue->isempty()) {
+                string trackName = standardQueue->dequeue();
+                cout << "\n[INFO] Playing from Standard Queue" << endl;
+                playTrackDisplay(trackName);
+            }
+            else {
+                cout << "\n[!] Silence... The queue is empty." << endl;
+            }
+            break;
+        }
+
+
+
         case 0:
             cout << "Exiting..." << endl;
             isRunning = false;
@@ -161,6 +233,9 @@ int main() {
 
         cout << "\n";
     }
+
+    delete standardQueue;
+    delete priorityStack;
 
     return 0;
 }
