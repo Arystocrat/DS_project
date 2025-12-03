@@ -33,7 +33,7 @@ int main() {
     Queue standardQueue;         // Standard playlist
     PlayNextStack priorityStack; // "Play Next" feature
 
-    // 2. Pre-fill the Library
+    // 2. Pre-fill the Library with some classics
     library.append("Linkin Park - Numb");
     library.append("Daft Punk - Get Lucky");
     library.append("Queen - Bohemian Rhapsody");
@@ -46,13 +46,14 @@ int main() {
 
     while (isRunning) {
         cout << "=========================================" << endl;
-        cout << "         CONSOLE MUSIC PLAYER v2.0       " << endl;
+        cout << "         CONSOLE MUSIC PLAYER v2.1       " << endl;
         cout << "=========================================" << endl;
         cout << "1. Show Library (All Tracks)" << endl;
         cout << "2. Add to Queue (by Index)" << endl;
         cout << "3. Play Next (Priority Stack)" << endl;
         cout << "4. View Player Status (Queue & Stack)" << endl;
         cout << "5. >> PLAY NEXT TRACK >>" << endl;
+        cout << "6. [+] Add New Track to Library" << endl; // <--- NEW OPTION
         cout << "0. Exit" << endl;
         cout << "=========================================" << endl;
         cout << "Enter choice: ";
@@ -75,7 +76,12 @@ int main() {
             int idx;
             cout << "Enter track index from Library: ";
             cin >> idx;
+
+            // Note: Since Arraymethod doesn't have a getSize() check,
+            // we rely on the user entering a valid index.
             if (idx >= 0) {
+                // Warning: If idx is out of bounds, program might crash
+                // because Arraymethod implementation lacks bounds checking.
                 string track = library.getbyindex(idx);
                 standardQueue.enqueue(track);
                 cout << "[Success] Added to Queue: " << track << endl;
@@ -90,7 +96,7 @@ int main() {
             string t, a;
             int d;
             cout << "Enter Song Title: ";
-            cin.ignore();
+            cin.ignore(); // Clear buffer
             getline(cin, t);
             cout << "Enter Artist: ";
             getline(cin, a);
@@ -98,7 +104,7 @@ int main() {
             cin >> d;
 
             Song s = {t, a, d};
-            priorityStack.push(s); // Pushed to top
+            priorityStack.push(s);
             break;
         }
 
@@ -108,28 +114,41 @@ int main() {
 
             // Display Queue (Standard)
             cout << "\n--- Standard Queue ---" << endl;
-            standardQueue.displayQueue(); // Using the NEW method
+            standardQueue.displayQueue();
             cout << "----------------------" << endl;
             break;
         }
 
         case 5: {
-            // PLAYBACK LOGIC
-            // 1. Check Stack first
+            // PLAYBACK LOGIC (Interactive Mode)
+
             if (!priorityStack.isEmpty()) {
                 Song s = priorityStack.pop();
                 cout << "\n[INFO] Playing from 'Play Next' List (Priority)" << endl;
                 playTrackDisplay(s.title, s.artist, s.duration);
             }
-            // 2. Check Queue second
             else if (!standardQueue.isempty()) {
                 string trackName = standardQueue.dequeue();
                 cout << "\n[INFO] Playing from Standard Queue" << endl;
                 playTrackDisplay(trackName);
             }
-            // 3. Nothing to play
             else {
                 cout << "\n[!] Silence... The queue is empty. Add more songs!" << endl;
+            }
+            break;
+        }
+
+        case 6: { // <--- NEW CASE: ADD TO LIBRARY
+            string newTrackName;
+            cout << "Enter the full track name (e.g. 'Artist - Song'): ";
+            cin.ignore(); // Clear buffer from the previous cin >> choice
+            getline(cin, newTrackName);
+
+            if (!newTrackName.empty()) {
+                library.append(newTrackName);
+                cout << "[Success] Track added to library!" << endl;
+            } else {
+                cout << "[Error] Track name cannot be empty." << endl;
             }
             break;
         }
