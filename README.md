@@ -1,0 +1,1 @@
+toje cheta delayu
