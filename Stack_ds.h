@@ -6,27 +6,31 @@
 
 using namespace std;
 
-struct Song {
-    string title;
-    string artist;
-    int duration;
+// Структура теперь Машина, а не Песня
+struct Car {
+    string id;      // Номер машины (Car ID)
+    int moves;      // (Опционально) сколько раз ее двигали, но пока хватит ID
 };
 
 struct StackNode {
-    Song data;
+    Car data;
     StackNode* next;
 };
 
-class PlayNextStack {
+class ParkingLaneStack { // Переименовали из PlayNextStack
 private:
     StackNode* topNode;
+    int count;          // Текущее количество машин
+    int capacity;       // Вместимость парковки (по заданию)
 
 public:
-    PlayNextStack() {
+    ParkingLaneStack(int cap = 5) { // По умолчанию 5 мест
         topNode = nullptr;
+        count = 0;
+        capacity = cap;
     }
 
-    ~PlayNextStack() {
+    ~ParkingLaneStack() {
         while (!isEmpty()) {
             pop();
         }
@@ -36,52 +40,58 @@ public:
         return topNode == nullptr;
     }
 
-    void push(Song newSong) {
-        StackNode* newNode = new StackNode();
-        newNode->data = newSong;
-        newNode->next = topNode;
-        topNode = newNode;
-        
-        cout << "[Stack] Added to Play Next: " << newSong.title << endl;
+    bool isFull() {
+        return count == capacity;
     }
 
-    Song pop() {
+    void push(Car newCar) {
+        if (isFull()) {
+            cout << ">> Parking Full! Cannot park Car " << newCar.id << endl;
+            return;
+        }
+        StackNode* newNode = new StackNode();
+        newNode->data = newCar;
+        newNode->next = topNode;
+        topNode = newNode;
+        count++;
+
+        // cout << "[Stack] Car Parked: " << newCar.id << endl;
+    }
+
+    Car pop() {
         if (isEmpty()) {
-            cout << "[Stack] No songs in Play Next list." << endl;
-            return {"", "", 0}; // Return empty song if stack is empty
+            return {"", 0};
         }
 
         StackNode* temp = topNode;
-        Song poppedSong = topNode->data;
+        Car poppedCar = topNode->data;
         topNode = topNode->next;
-        
+
         delete temp;
-        return poppedSong;
+        count--;
+        return poppedCar;
     }
 
-    Song peek() {
+    Car peek() {
         if (isEmpty()) {
-            return {"", "", 0};
+            return {"", 0};
         }
         return topNode->data;
     }
 
     void displayStack() {
         if (isEmpty()) {
-            cout << "\n--- Play Next List is Empty ---\n";
+            cout << "   (Lane is Empty)\n";
             return;
         }
 
-        cout << "\n--- Up Next (Priority) ---\n";
         StackNode* current = topNode;
-        int count = 1;
+        cout << "(EXIT) -> ";
         while (current != nullptr) {
-            cout << count << ". " << current->data.title 
-                 << " - " << current->data.artist << endl;
+            cout << "[" << current->data.id << "] ";
             current = current->next;
-            count++;
         }
-        cout << "--------------------------\n";
+        cout << " -> (WALL)" << endl;
     }
 };
 

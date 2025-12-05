@@ -1,226 +1,136 @@
 #include <iostream>
 #include <string>
-#include <thread> // For sleep
-#include <chrono>
+#include <windows.h> // Для русского языка (если нужно)
 
-
-// g++ main.cpp -o main.exe & main.exe
-
-
-// Include your headers
-#include "arraym.h"
-#include "QUEUE.h"
+// Подключаем обновленные хедеры
 #include "Stack_ds.h"
+#include "QUEUE.h"
 
 using namespace std;
 
-// Helper function to simulate playing a track
-void playTrackDisplay(string title, string artist = "", int duration = 2) {
-    cout << "\n------------------------------------------------" << endl;
-    cout << " >> [NOW PLAYING] " << title;
-    if (!artist.empty()) cout << " " << artist; // Artist is now optional/part of title
-    cout << endl;
-    cout << "------------------------------------------------" << endl;
-
-    // Progress bar simulation
-    cout << "Playing: [";
-    for(int i=0; i<10; i++) {
-        cout << "/";
-        this_thread::sleep_for(chrono::milliseconds(duration * 100));
-    }
-    cout << "] Done.\n" << endl;
-}
-
 int main() {
-    // 1. Initialize Data Structures
-    Arraymethod library;
-    Queue* standardQueue = new Queue();
-    PlayNextStack* priorityStack = new PlayNextStack();
+    SetConsoleOutputCP(65001); // UTF-8
 
-    // 2. Pre-fill the Library
-    library.append("Linkin Park - Numb");
-    library.append("Daft Punk - Get Lucky");
-    library.append("Queen - Bohemian Rhapsody");
-    library.append("Metallica - Enter Sandman");
-    library.append("Eminem - Lose Yourself");
-    library.append("Hans Zimmer - Time");
+    // 1. Создаем основные структуры
+    // По заданию: One narrow parking lane (Stack)
+    // Давайте сделаем вместимость 5 машин
+    ParkingLaneStack parkingLane(5);
+
+    // Temporary Holding Lane (Queue)
+    TempQueue tempLane;
+
+    // Предзаполним парковку как в примере PDF:
+    // Bottom -> Car 10, Car 20, Car 30, Car 40 -> Top
+    parkingLane.push({"Car 10"});
+    parkingLane.push({"Car 20"});
+    parkingLane.push({"Car 30"});
+    parkingLane.push({"Car 40"});
 
     int choice = 0;
     bool isRunning = true;
 
     while (isRunning) {
+        cout << "\n=========================================" << endl;
+        cout << "   PARKING LOT MANAGEMENT SYSTEM         " << endl;
         cout << "=========================================" << endl;
-        cout << "         CONSOLE MUSIC PLAYER v2.2       " << endl;
-        cout << "=========================================" << endl;
-        cout << "1. Show Library (All Tracks)" << endl;
-        cout << "2. Add to Queue (Standard Playlist)" << endl;
-        cout << "3. Play Next (Priority Stack) [From Lib]" << endl; // <--- CHANGED
-        cout << "4. View Player Status (Queue & Stack)" << endl;
-        cout << "5. [+] Add New Track to Library" << endl;
-        cout << "6. [-] Delete Track from Queue" << endl;
-        cout << "7. [-] Delete Track from Stack" << endl;
-        cout << "8. >> PLAY NEXT TRACK >>" << endl;        
+        cout << "Current Lane Status:" << endl;
+        parkingLane.displayStack();
+        cout << "-----------------------------------------" << endl;
+        cout << "1. Park a Car (Push to Stack)" << endl;
+        cout << "2. Remove a Specific Car (The Main Logic)" << endl;
+        cout << "3. Display All Cars" << endl;
         cout << "0. Exit" << endl;
         cout << "=========================================" << endl;
-        cout << "Enter choice: ";
+        cout << "Choice: ";
 
         if (!(cin >> choice)) {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            choice = -1;
+            cin.clear(); cin.ignore(10000, '\n'); choice = -1;
         }
 
         switch (choice) {
         case 1: {
-            cout << "\n--- MUSIC LIBRARY ---" << endl;
-            library.display();
+            string id;
+            cout << "Enter Car ID (e.g. 'Car 50'): ";
+            cin.ignore();
+            getline(cin, id);
+
+            if (!id.empty()) {
+                if (!parkingLane.isFull()) {
+                    parkingLane.push({id});
+                    cout << ">> Success: " << id << " parked." << endl;
+                } else {
+                    cout << ">> Error: Parking is FULL!" << endl;
+                }
+            }
             break;
         }
 
         case 2: {
-            // Add to Standard Queue (Last in, Last out)
-            int idx;
-            cout << "Enter track index for Queue: ";
-            cin >> idx;
+            // ЛОГИКА ИЗ PDF (Remove Specific Car)
+            if (parkingLane.isEmpty()) {
+                cout << ">> Parking is empty. Nothing to remove." << endl;
+                break;
+            }
 
-            if (idx >= 0) {
-                string track = library.getbyindex(idx);
-                standardQueue->enqueue(track);
-                cout << "[Success] Added to Queue: " << track << endl;
+            string targetID;
+            cout << "Enter Car ID to remove: ";
+            cin.ignore();
+            getline(cin, targetID);
+
+            cout << "\n--- STARTING REMOVAL PROCESS ---" << endl;
+            int moves = 0;
+            bool found = false;
+
+            // Шаг 1: Ищем машину, перекладывая верхние в Очередь
+            // (Keep popping cars until you find the target)
+            while (!parkingLane.isEmpty()) {
+                Car topCar = parkingLane.peek();
+
+                if (topCar.id == targetID) {
+                    // НАШЛИ!
+                    parkingLane.pop(); // Просто удаляем (машина уезжает)
+                    moves++; // Удаление тоже считается движением (по PDF)
+                    cout << ">> Target found: " << topCar.id << " removed! (Move #" << moves << ")" << endl;
+                    found = true;
+                    break; // Прерываем цикл поиска
+                }
+                else {
+                    // Не та машина. Перемещаем во временную очередь
+                    Car temp = parkingLane.pop();
+                    tempLane.enqueue(temp.id);
+                    moves++;
+                    cout << ">> Moved " << temp.id << " to temp queue. (Move #" << moves << ")" << endl;
+                }
+            }
+
+            if (!found) {
+                cout << ">> Car " << targetID << " not found in the lane!" << endl;
+            }
+
+            // Шаг 2: Возвращаем машины из Очереди обратно в Стек
+            // (Move cars from the queue back into the stack)
+            cout << "--- RESTORING OTHER CARS ---" << endl;
+            while (!tempLane.isempty()) {
+                string tempID = tempLane.dequeue();
+                parkingLane.push({tempID});
+                moves++;
+                cout << ">> Moved " << tempID << " back to stack. (Move #" << moves << ")" << endl;
+            }
+
+            cout << "---------------------------------" << endl;
+            if (found) {
+                cout << "Total moves required: " << moves << endl;
             } else {
-                cout << "[Error] Invalid index." << endl;
+                cout << "Car was not found. System restored." << endl;
             }
             break;
         }
 
         case 3: {
-            // Add to Priority Stack (Last in, First out) - FROM LIBRARY
-            int idx;
-            cout << "Enter track index for 'Play Next' (Priority): ";
-            cin >> idx;
-
-            if (idx >= 0) {
-                string trackName = library.getbyindex(idx);
-
-                // We need to convert the library string into a Song struct
-                // because the Stack works with 'Song' objects.
-                Song s;
-                s.title = trackName;  // Put the whole string (e.g. "Artist - Name") here
-                s.artist = "";        // Leave artist empty (it's already in title)
-                s.duration = 3;       // Default duration for quick adding
-
-                priorityStack->push(s);
-                cout << "[Success] Jumped the queue! Up Next: " << trackName << endl;
-            } else {
-                cout << "[Error] Invalid index." << endl;
-            }
+            cout << "\nParking Lane (Top to Bottom):" << endl;
+            parkingLane.displayStack();
             break;
         }
-
-        case 4: {
-            priorityStack->displayStack();
-            cout << "\n--- Standard Queue ---" << endl;
-            standardQueue->displayQueue();
-            cout << "----------------------" << endl;
-            break;
-        }
-
-
-        case 5: {
-            string newTrackName;
-            cout << "Enter track name: ";
-            cin.ignore();
-            getline(cin, newTrackName);
-
-            if (!newTrackName.empty()) {
-                library.append(newTrackName);
-                cout << "[Success] Track added to library!" << endl;
-            }
-            break;
-        }
-
-
-        case 6: {
-
-            if (standardQueue->isempty()){
-                cout << "Nothing to delete!" << endl;
-                break;
-            }
-            else{
-                int index = 0;
-                cout << "Enter index of track to delete from Queue: ";
-                cin >> index;
-                cin.ignore();
-                Queue* temp = new Queue();
-                for (int i = 1 ; i != index ; i++){
-                    string track = standardQueue->dequeue();
-                    temp->enqueue(track);
-                }
-                string deletedTrack = standardQueue->dequeue();
-                cout << "[Deleted] " << deletedTrack << " from Queue." << endl;
-                while (!standardQueue->isempty()){
-                    string track = standardQueue->dequeue();
-                    temp->enqueue(track);
-                }
-                delete standardQueue;
-                standardQueue = temp;
-
-            }
-
-
-            break;
-        }        
-        case 7: {
-            if (priorityStack->isEmpty()){
-                cout << "Nothing to delete!" << endl;
-                break;
-            }
-            else{
-                int index = 0;
-                cout << "Enter index of track to delete from 'Play Next' Stack: ";
-                cin >> index;
-                cin.ignore();
-                PlayNextStack* tempStack = new PlayNextStack();
-                for (int i = 1 ; i != index ; i++){
-                    Song track = priorityStack->pop();
-                    tempStack->push(track);
-                }
-                Song deletedSong = priorityStack->pop();
-                cout << "[Deleted] " << deletedSong.title << " from 'Play Next' Stack." << endl;
-                while (!priorityStack->isEmpty()){
-                    Song track = priorityStack->pop();
-                    tempStack->push(track);
-                }
-                // Restore original stack without the deleted song
-                while (!tempStack->isEmpty()){
-                    Song track = tempStack->pop();
-                    priorityStack->push(track);
-                }
-                delete tempStack;
-
-            }
-            break;
-        }
-    
-        case 8: {
-            // Playback logic
-            if (!priorityStack->isEmpty()) {
-                Song s = priorityStack->pop();
-                cout << "\n[INFO] Playing from 'Play Next' List (Priority)" << endl;
-                playTrackDisplay(s.title, s.artist, s.duration);
-            }
-            else if (!standardQueue->isempty()) {
-                string trackName = standardQueue->dequeue();
-                cout << "\n[INFO] Playing from Standard Queue" << endl;
-                playTrackDisplay(trackName);
-            }
-            else {
-                cout << "\n[!] Silence... The queue is empty." << endl;
-            }
-            break;
-        }
-
-
 
         case 0:
             cout << "Exiting..." << endl;
@@ -228,14 +138,9 @@ int main() {
             break;
 
         default:
-            cout << "Invalid command." << endl;
+            cout << "Invalid choice." << endl;
         }
-
-        cout << "\n";
     }
-
-    delete standardQueue;
-    delete priorityStack;
 
     return 0;
 }

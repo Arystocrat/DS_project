@@ -5,30 +5,29 @@
 #include <string>
 using namespace std;
 
-
+// Узел очереди
 class QueueNode {
 public:
-    string track;
+    string carID; // Храним просто ID машины
     QueueNode* next;
 
-    QueueNode(const string& t) : track(t), next(nullptr) {}
+    QueueNode(const string& id) : carID(id), next(nullptr) {}
 };
 
-class Queue {
+class TempQueue { // Переименовали в TempQueue
 private:
     QueueNode* first;
     QueueNode* last;
     int size;
-    const int MAX = 50;
 
 public:
-    Queue() {
+    TempQueue() {
         first = nullptr;
         last = nullptr;
         size = 0;
     }
 
-    ~Queue() {
+    ~TempQueue() {
         while (!isempty()) {
             dequeue();
         }
@@ -38,17 +37,8 @@ public:
         return size == 0;
     }
 
-    bool isfull() {
-        return size == MAX;
-    }
-
-    void enqueue(const string& track) {
-        if (isfull()) {
-            cout << "[Queue] Full!" << endl;
-            return;
-        }
-
-        QueueNode* newNode = new QueueNode(track);
+    void enqueue(const string& carID) {
+        QueueNode* newNode = new QueueNode(carID);
 
         if (isempty()) {
             first = newNode;
@@ -58,18 +48,16 @@ public:
             last->next = newNode;
             last = newNode;
         }
-
         size++;
     }
 
     string dequeue() {
         if (isempty()) {
-            cout << "[Queue] Empty!" << endl;
             return "";
         }
 
         QueueNode* temp = first;
-        string nextTrack = temp->track;
+        string val = temp->carID;
 
         first = first->next;
 
@@ -79,29 +67,19 @@ public:
 
         delete temp;
         size--;
-        return nextTrack;
+        return val;
     }
 
-    string front() {
-        if (isempty()) {
-            return "Empty";
-        }
-        return first->track;
-    }
-
-    // --- NEW METHOD ---
+    // Метод для отображения (отладки)
     void displayQueue() {
         if (isempty()) {
-            cout << "   (Queue is empty)" << endl;
+            cout << "(Empty)";
             return;
         }
-
-        QueueNode* current = first;
-        int count = 1;
-        while (current != nullptr) {
-            cout << "   " << count << ". " << current->track << endl;
-            current = current->next;
-            count++;
+        QueueNode* curr = first;
+        while(curr) {
+            cout << "[" << curr->carID << "] ";
+            curr = curr->next;
         }
     }
 };
